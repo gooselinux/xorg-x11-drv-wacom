@@ -1,0 +1,103 @@
+From 891d98ea596e7a42d8da3712c6b3df1132179c98 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Tue, 11 May 2010 08:24:14 +1000
+Subject: [PATCH] Revert "Always init wheel buttons to 4/5."
+
+This commit leads to weird button events on tools like the Art Pen.
+http://sourceforge.net/mailarchive/forum.php?thread_name=AANLkTil9O7b5Q7k03-zBWS_mSEJ79dDuh0ZqsBhuOI2v%40mail.gmail.com&forum_name=linuxwacom-discuss
+
+This reverts commit 0fbd3e34d792cb17163c1974d7e8ce93c24242a0.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+xf86-input-wacom: Button 4 and 5 events are only for touch ring
+
+Only absolute wheels on the pad (normally touch rings) can send
+button events. Absolute wheels that are defined for the stylus,
+such as airbrush wheel or ArtPen rotation should only report raw
+data. It would be up to the client/application to translate those
+raw data in a way they like.
+
+Signed-off-by: Ping Cheng <pingc@wacom.com>
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+Move wheel button initialization into wcmParseOptions.
+
+This isn't strictly correct since it's not an option, but the IsPad() during
+wcmAllocate() doesn't do anything - we only have the required bits set later
+during wcmSetType().
+
+Result was that the pad never had the wheel buttons initialized, leading to
+a broken wheel on Intuos4 series tablets.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Ping Cheng <pinglinux@gmail.com>
+
+Conflicts:
+
+	src/wcmValidateDevice.c
+---
+ src/wcmCommon.c         |    4 ++--
+ src/wcmConfig.c         |    7 ++++---
+ src/wcmValidateDevice.c |   10 +++++++++-
+ 3 files changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/src/wcmCommon.c b/src/wcmCommon.c
+index d52f856..45898a4 100644
+--- a/src/wcmCommon.c
++++ b/src/wcmCommon.c
+@@ -585,8 +585,8 @@ static void sendWheelStripEvents(LocalDevicePtr local, const WacomDeviceState* d
+ 		}
+ 	}
+ 
+-	/* emulate events for absolute wheel when needed */
+-	if ( ds->abswheel != priv->oldWheel )
++	/* emulate events for absolute wheel when it is a touch ring (on pad) */
++	if ( (ds->abswheel != priv->oldWheel) && IsPad(priv) )
+ 	{
+ 		value = priv->oldWheel - ds->abswheel;
+ 		if ( value > 0 )
+diff --git a/src/wcmConfig.c b/src/wcmConfig.c
+index 6768f3a..5dd65ce 100644
+--- a/src/wcmConfig.c
++++ b/src/wcmConfig.c
+@@ -87,9 +87,10 @@ static int wcmAllocate(LocalDevicePtr local)
+ 	priv->nbuttons = WCM_MAX_BUTTONS;		/* Default number of buttons */
+ 	priv->relup = 5;			/* Default relative wheel up event */
+ 	priv->reldn = 4;			/* Default relative wheel down event */
+-
+-	priv->wheelup = 4;			/* Default absolute wheel up event */
+-	priv->wheeldn = 5;			/* Default absolute wheel down event */
++	/* wheel events are set to 0, but the pad overwrites this default
++	 * later in wcmParseOptions, when we have IsPad() available */
++	priv->wheelup = 0;			/* Default absolute wheel up event */
++	priv->wheeldn = 0;			/* Default absolute wheel down event */
+ 	priv->striplup = 4;			/* Default left strip up event */
+ 	priv->stripldn = 5;			/* Default left strip down event */
+ 	priv->striprup = 4;			/* Default right strip up event */
+diff --git a/src/wcmValidateDevice.c b/src/wcmValidateDevice.c
+index 51b16de..bfae941 100644
+--- a/src/wcmValidateDevice.c
++++ b/src/wcmValidateDevice.c
+@@ -333,9 +333,17 @@ int wcmParseOptions(LocalDevicePtr local)
+ 		 */
+ 	}
+ 
+-	/* Pad is always in relative mode. */
++	/* Pad is always in relative mode.
++	 * The pad also defaults to wheel scrolling, unlike the pens
++	 * (interesting effects happen on ArtPen and others with build-in
++	 * wheels)
++	 */
+ 	if (IsPad(priv))
++	{
+ 		priv->flags &= ~ABSOLUTE_FLAG;
++		priv->wheelup = 4;
++		priv->wheeldn = 5;
++	}
+ 
+ 	/* Store original local Core flag so it can be changed later */
+ 	if (local->flags & (XI86_ALWAYS_CORE | XI86_CORE_POINTER))
+-- 
+1.7.1
+
