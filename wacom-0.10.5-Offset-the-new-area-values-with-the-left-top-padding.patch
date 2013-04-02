@@ -1,0 +1,98 @@
+From e57f186f69c56f832c48a5c3c94d3db8f10e97a3 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 17 Jan 2011 13:36:13 +1000
+Subject: [PATCH 4/4] Offset the new area values with the left/top padding if needed.
+
+---
+ src/wcmXCommand.c |   26 ++++++++++++++++----------
+ src/xf86Wacom.c   |   21 +++++++++++++++++++++
+ src/xf86Wacom.h   |    1 +
+ 3 files changed, 38 insertions(+), 10 deletions(-)
+
+diff --git a/src/wcmXCommand.c b/src/wcmXCommand.c
+index d3c5cfe..3a17484 100644
+--- a/src/wcmXCommand.c
++++ b/src/wcmXCommand.c
+@@ -303,19 +303,25 @@ int wcmSetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
+ 
+ 		if (!checkonly)
+ 		{
++			area->topX = values[0];
++			area->topY = values[1];
++			area->bottomX = values[2];
++			area->bottomY = values[3];
++
+ 			if ((values[0] == -1) && (values[1] == -1) &&
+ 					(values[2] == -1) && (values[3] == -1))
+ 			{
+-				values[0] = 0;
+-				values[1] = 0;
+-				values[2] = priv->maxX;
+-				values[3] = priv->maxY;
+-			}
+-
+-			priv->topX = area->topX = values[0];
+-			priv->topY = area->topY = values[1];
+-			priv->bottomX = area->bottomX = values[2];
+-			priv->bottomY = area->bottomY = values[3];
++				area->topX = 0;
++				area->topY = 0;
++				area->bottomX = priv->maxX;
++				area->bottomY = priv->maxY;
++			} else /* offset for multimonitor */
++				wcmAdjustArea(local, area);
++
++			priv->topX = area->topX;
++			priv->topY = area->topY;
++			priv->bottomX = area->bottomX;
++			priv->bottomY = area->bottomY;
+ 			wcmInitialCoordinates(local, 0);
+ 			wcmInitialCoordinates(local, 1);
+ 		}
+diff --git a/src/xf86Wacom.c b/src/xf86Wacom.c
+index 228e954..578d7bc 100644
+--- a/src/xf86Wacom.c
++++ b/src/xf86Wacom.c
+@@ -289,6 +289,27 @@ void wcmVirtualTabletPadding(LocalDevicePtr local)
+ 	return;
+ }
+ 
++void
++wcmAdjustArea(const LocalDevicePtr local, WacomToolArea *area)
++{
++	WacomDevicePtr priv = (WacomDevicePtr)local->private;
++
++	/* If we're bound to a specific screen, substract the screen's
++	 * offset from the area coordinates we have here.
++	 */
++	if (priv->screen_no != -1)
++	{
++		wcmVirtualTabletPadding(local);
++		DBG(10, priv, "padding is %d/%d\n", priv->leftPadding, priv->topPadding);
++		area->topX -= priv->leftPadding;
++		area->bottomX -= priv->leftPadding;
++		area->topY -= priv->topPadding;
++		area->bottomY -= priv->topPadding;
++		DBG(10, priv, "updated area is %d/%d → %d/%d\n",
++		    area->topX, area->topY, area->bottomX, area->bottomY);
++	}
++}
++
+ /*****************************************************************************
+  * wcmVirtualTabletSize(LocalDevicePtr local)
+  ****************************************************************************/
+diff --git a/src/xf86Wacom.h b/src/xf86Wacom.h
+index aaf3a22..2c84744 100644
+--- a/src/xf86Wacom.h
++++ b/src/xf86Wacom.h
+@@ -170,6 +170,7 @@ extern void wcmRotateTablet(LocalDevicePtr local, int value);
+ extern void wcmRotateCoordinates(LocalDevicePtr local, int* x, int* y);
+ extern void wcmVirtualTabletSize(LocalDevicePtr local);
+ extern void wcmVirtualTabletPadding(LocalDevicePtr local);
++extern void wcmAdjustArea(LocalDevicePtr local, WacomToolAreaPtr area);
+ 
+ extern int wcmCheckPressureCurveValues(int x0, int y0, int x1, int y1);
+ 
+-- 
+1.7.3.4
+

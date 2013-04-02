@@ -1,0 +1,52 @@
+From 5b650c6e85e77c40c1f1de9b0711f4f47440271b Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 27 Oct 2010 11:16:56 +1000
+Subject: [PATCH 10/11] xsetwacom: for button mappings with keycodes, print the keysyms
+
+This isn't really accurate as it relies on the current keymap, but then
+again, that's what you get for having keysym handling in the driver...
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+(cherry picked from commit da364f528bf42a80a9bb45e27beaf1632265c21c)
+---
+ tools/xsetwacom.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 20a66f1..098ecbe 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1979,6 +1979,7 @@ static int get_special_button_map(Display *dpy, XDevice *dev,
+ 		int detail;
+ 		int is_press = -1;
+ 		char str[10] = {0};
++		char press_str = ' ';
+ 
+ 		current_type = action & AC_TYPE;
+ 		detail = action & AC_CODE;
+@@ -1990,6 +1991,7 @@ static int get_special_button_map(Display *dpy, XDevice *dev,
+ 				if (last_type != current_type)
+ 					strcat(buff, "key ");
+ 				is_press = !!(action & AC_KEYBTNPRESS);
++				detail = XKeycodeToKeysym(dpy, detail, 0);
+ 				break;
+ 			case AC_BUTTON:
+ 				if (last_type != current_type)
+@@ -2007,8 +2009,12 @@ static int get_special_button_map(Display *dpy, XDevice *dev,
+ 				continue;
+ 		}
+ 
+-		sprintf(str, "%s%d ",
+-			(is_press == -1) ? "" : ((is_press) ?  "+" : "-"), detail);
++		press_str = (is_press == -1) ? ' ' : ((is_press) ?  '+' : '-');
++		if (current_type == AC_KEY)
++			sprintf(str, "%c%s ", press_str,
++				XKeysymToString(detail));
++		else
++			sprintf(str, "%c%d ", press_str, detail);
+ 		strcat(buff, str);
+ 		last_type = current_type;
+ 		last_press = is_press;
+-- 
+1.7.1
+

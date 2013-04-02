@@ -1,0 +1,25 @@
+From e19d72ac82efc83b47b7772aa07c56a683b95ecb Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 22 Mar 2010 14:17:19 +1000
+Subject: [PATCH] man: remove linuxwacom reference, replace with current version instead.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+---
+ man/wacom.man |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/man/wacom.man b/man/wacom.man
+index 48aadad..1bccb93 100644
+--- a/man/wacom.man
++++ b/man/wacom.man
+@@ -1,5 +1,5 @@
+ .ds q \N'34'
+-.TH WACOM 4x "linuxwacom 0.8.3" "X Version 11"
++.TH WACOM __drivermansuffix__ __vendorversion__
+ .SH NAME
+ wacom \- Wacom input driver
+ .SH SYNOPSIS
+-- 
+1.6.6.1
+

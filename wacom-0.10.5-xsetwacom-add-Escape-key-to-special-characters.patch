@@ -1,0 +1,28 @@
+From 42ab29b6cde8c35fadd0f26bee70285b4d090229 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Tue, 1 Jun 2010 15:31:07 +1000
+Subject: [PATCH 05/11] xsetwacom: add Escape key to special characters.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Ping Cheng <pinglinux@gmail.com>
+(cherry picked from commit de4a3690c25b822d0bdc54602befa9a09c2af54b)
+---
+ tools/xsetwacom.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 2b2f7d7..dfd6267 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1090,6 +1090,8 @@ static char *convert_specialkey(const char *modifier)
+ 		{"f31", "F31"}, {"f32", "F32"}, {"f33", "F33"},
+ 		{"f34", "F34"}, {"f35", "F35"},
+ 
++		{"esc", "Escape"}, {"Esc", "Escape"},
++
+ 		{ NULL, NULL }
+ 	};
+ 
+-- 
+1.7.1
+

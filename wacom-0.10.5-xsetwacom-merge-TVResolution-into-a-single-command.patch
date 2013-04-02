@@ -1,0 +1,44 @@
+From 787cd544b3a0024d53620332a5fa00a4a227c23c Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Fri, 27 Aug 2010 11:04:44 +1000
+Subject: [PATCH 7/9] xsetwacom: merge TVResolution into a single command
+
+Instead of TVResolution0 and TVResolution1, merge them into a single 4-value
+command.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   14 +++-----------
+ 1 files changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 460d87c..8670b02 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -473,20 +473,12 @@ static param_t parameters[] =
+ 		.prop_offset = 3,
+ 	},
+ 	{
+-		.name = "TVResolution0",
+-		.desc = "Sets MetaModes option for TwinView Screen 0. ",
++		.name = "TVResolution",
++		.desc = "Sets MetaModes option for TwinView. ",
+ 		.prop_name = WACOM_PROP_TWINVIEW_RES,
+ 		.prop_format = 32,
+ 		.prop_offset = 0,
+-		.prop_extra = 1,
+-	},
+-	{
+-		.name = "TVResolution1",
+-		.desc = "Sets MetaModes option for TwinView Screen 1. ",
+-		.prop_name = WACOM_PROP_TWINVIEW_RES,
+-		.prop_format = 32,
+-		.prop_offset = 2,
+-		.prop_extra = 1,
++		.prop_extra = 3,
+ 	},
+ 	{
+ 		.name = "RawFilter",
+-- 
+1.7.2.2
+

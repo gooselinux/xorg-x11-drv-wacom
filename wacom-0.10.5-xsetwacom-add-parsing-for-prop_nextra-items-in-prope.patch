@@ -1,0 +1,93 @@
+From 034e97da502ab11de7d342964257453c9ddbc322 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 25 Aug 2010 15:21:04 +1000
+Subject: [PATCH 5/9] xsetwacom: add parsing for prop_nextra items in property.
+
+Automatic handling of properties that take several items, eg. TVResolution0
+and TVResolution1.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   29 +++++++++++++++++++++--------
+ 1 files changed, 21 insertions(+), 8 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 708fa68..7631420 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -60,6 +60,7 @@ typedef struct _param
+ 	const char *prop_name;	/* property name */
+ 	const int prop_format;	/* property format */
+ 	const int prop_offset;	/* offset (index) into the property values */
++	const int prop_extra;   /* extra number of items after first one */
+ 	const unsigned int prop_flags;
+ 	void (*set_func)(Display *dpy, XDevice *dev, struct _param *param, int argc, char **argv); /* handler function, if appropriate */
+ 	void (*get_func)(Display *dpy, XDevice *dev, struct _param *param, int argc, char **argv); /* handler function for getting, if appropriate */
+@@ -477,13 +478,15 @@ static param_t parameters[] =
+ 		.prop_name = WACOM_PROP_TWINVIEW_RES,
+ 		.prop_format = 32,
+ 		.prop_offset = 0,
++		.prop_extra = 1,
+ 	},
+ 	{
+ 		.name = "TVResolution1",
+ 		.desc = "Sets MetaModes option for TwinView Screen 1. ",
+ 		.prop_name = WACOM_PROP_TWINVIEW_RES,
+ 		.prop_format = 32,
+-		.prop_offset = 1,
++		.prop_offset = 2,
++		.prop_extra = 1,
+ 	},
+ 	{
+ 		.name = "RawFilter",
+@@ -1969,6 +1972,8 @@ static void get_param(Display *dpy, XDevice *dev, param_t *param, int argc, char
+ 	int format;
+ 	unsigned char* data;
+ 	unsigned long nitems, bytes_after;
++	int i;
++	char str[100] = {0};
+ 
+ 	if (param->get_func)
+ 	{
+@@ -1997,23 +2002,31 @@ static void get_param(Display *dpy, XDevice *dev, param_t *param, int argc, char
+ 	switch(param->prop_format)
+ 	{
+ 		case 8:
++			for (i = 0; i < 1 + param->prop_extra; i++)
+ 			{
+-				char str[10] = {0};
+-				int val = data[param->prop_offset];
++				int val = data[param->prop_offset + i];
+ 
+ 				if (param->prop_flags & PROP_FLAG_BOOLEAN)
+-					sprintf(str, "%s", val ?  "on" : "off");
++					sprintf(&str[strlen(str)], "%s", val ?  "on" : "off");
+ 				else
+-					sprintf(str, "%d", val);
+-				print_value(param, "%s", str);
++					sprintf(&str[strlen(str)], "%d", val);
++
++				if (i < param->prop_extra)
++					strcat(str, " ");
+ 			}
++			print_value(param, "%s", str);
+ 			break;
+ 		case 32:
++			for (i = 0; i < 1 + param->prop_extra; i++)
+ 			{
+ 				long *ldata = (long*)data;
+-				print_value(param, "%ld", ldata[param->prop_offset]);
+-				break;
++				sprintf(&str[strlen(str)], "%ld", ldata[param->prop_offset + i]);
++
++				if (i < param->prop_extra)
++					strcat(str, " ");
+ 			}
++			print_value(param, "%s", str);
++			break;
+ 	}
+ }
+ 
+-- 
+1.7.2.2
+

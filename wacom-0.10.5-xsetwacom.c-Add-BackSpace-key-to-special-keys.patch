@@ -1,0 +1,28 @@
+From ccb262d20ddc6351e9771aca188efc807356923f Mon Sep 17 00:00:00 2001
+From: David Foley <favux.is@gmail.com>
+Date: Mon, 21 Jun 2010 11:07:11 -0500
+Subject: [PATCH 07/11] xsetwacom.c: Add BackSpace key to special keys
+
+Signed-off-by: David Foley <favux.is@gmail.com>
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+(cherry picked from commit 3770aaf4a4b91454e9c6894e240583dace2afbbc)
+---
+ tools/xsetwacom.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 8671ef3..08e260a 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1095,6 +1095,8 @@ static char *convert_specialkey(const char *modifier)
+ 		{"up", "Up"}, {"down", "Down"},
+ 		{"left", "Left"}, {"right", "Right"},
+ 
++		{"backspace", "BackSpace"}, {"Backspace", "BackSpace"},
++
+ 		{ NULL, NULL }
+ 	};
+ 
+-- 
+1.7.1
+

@@ -1,0 +1,47 @@
+From 9c2337022305d034aa043395d1883338553a10c0 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Fri, 27 Aug 2010 14:04:44 +1000
+Subject: [PATCH 9/9] When setting TwinView, update the number of screens.
+
+May TwinView burn in a fire for this commit, not I.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ src/wcmXCommand.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/src/wcmXCommand.c b/src/wcmXCommand.c
+index 4716840..2145749 100644
+--- a/src/wcmXCommand.c
++++ b/src/wcmXCommand.c
+@@ -429,6 +429,7 @@ int wcmSetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
+ 		return BadValue; /* Read-only */
+ 	} else if (property == prop_display)
+ 	{
++		int nscreens = priv->numScreen;
+ 		INT8 *values;
+ 
+ 		if (prop->size != 3 || prop->format != 8)
+@@ -436,7 +437,10 @@ int wcmSetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
+ 
+ 		values = (INT8*)prop->data;
+ 
+-		if (values[0] < -1 || values[0] >= priv->numScreen)
++		if (values[1] != TV_NONE)
++			nscreens = 2;
++
++		if (values[0] < -1 || values[0] >= nscreens)
+ 			return BadValue;
+ 
+ 		if (values[1] < TV_NONE || values[1] > TV_MAX)
+@@ -455,6 +459,7 @@ int wcmSetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
+ 			{
+ 				int screen = priv->screen_no;
+ 				priv->twinview = values[1];
++				priv->numScreen = (priv->twinview) == TV_NONE ? screenInfo.numScreens : 2;
+ 
+ 				/* Can not restrict the cursor to a particular screen */
+ 				if (!values[1] && (screenInfo.numScreens == 1))
+-- 
+1.7.2.2
+

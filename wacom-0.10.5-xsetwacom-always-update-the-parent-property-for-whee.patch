@@ -1,0 +1,42 @@
+From a47c68d4d09912875a3ff41eabaa90fec25c3feb Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 9 Aug 2010 12:14:00 +1000
+Subject: [PATCH] xsetwacom: always update the parent property for wheel/strip actions.
+
+With the new support for wheel actions, the actual action would be delayed
+by one invocation, i.e. any action would always reflect the last xsetwacom
+command, not the current one.
+
+Caused by the driver now calls XIGetProperty() during the update but the
+property hasn't actually set the value yet. Hack around this by always
+updating the parent property, triggering a reload of all actions.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+(cherry picked from commit ba77b532e6c2a0b7b05ab129009c1f614b089c37)
+---
+ tools/xsetwacom.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 1ad2ceb..cf50dc0 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1437,11 +1437,10 @@ static void special_map_buttons(Display *dpy, XDevice *dev, param_t* param, int
+ 					PropModeReplace,
+ 					(unsigned char*)data, nitems);
+ 
+-	if (need_update)
+-		XChangeDeviceProperty(dpy, dev, btnact_prop, XA_ATOM, 32,
+-					PropModeReplace,
+-					(unsigned char*)btnact_data,
+-					btnact_nitems);
++	XChangeDeviceProperty(dpy, dev, btnact_prop, XA_ATOM, 32,
++				PropModeReplace,
++				(unsigned char*)btnact_data,
++				btnact_nitems);
+ 	XFlush(dpy);
+ }
+ 
+-- 
+1.7.1
+

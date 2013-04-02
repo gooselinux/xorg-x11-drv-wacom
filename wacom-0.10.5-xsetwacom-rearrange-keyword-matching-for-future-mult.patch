@@ -1,0 +1,112 @@
+From 64bf8601831e83421cec70bd2fff81cad0f844e1 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 27 Oct 2010 09:24:21 +1000
+Subject: [PATCH 02/11] xsetwacom: rearrange keyword matching for future multi-keyword assignment.
+
+In the future, xsetwacom should support a --set Button1 "key a b c button 1
+key a" mapping. This is the first step towards it.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+
+Conflicts:
+
+	tools/xsetwacom.c
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   56 +++++++++++++++++++++++++++++++++++++++-------------
+ 1 files changed, 42 insertions(+), 14 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index a941a29..0fa4972 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1160,6 +1160,30 @@ static int keysym_to_keycode(Display *dpy, KeySym sym)
+ out:
+ 	return kc;
+ }
++static int special_map_keystrokes(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
++
++/* Valid keywords for the --set ButtonX options */
++struct keywords {
++	const char *keyword;
++	int (*func)(Display*, int, char **, unsigned long*, unsigned long *);
++} keywords[] = {
++	{"key", special_map_keystrokes},
++	{ NULL, NULL }
++};
++
++static inline int is_valid_keyword(const char *keyword)
++{
++	struct keywords *kw = keywords;
++
++	while(kw->keyword)
++	{
++		if (strcmp(keyword, kw->keyword) == 0)
++			return 1;
++		kw++;
++	}
++	return 0;
++}
++
+ /*
+    Map gibberish like "ctrl alt f2" into the matching AC_KEY values.
+    Returns 1 on success or 0 otherwise.
+@@ -1178,6 +1202,9 @@ static int special_map_keystrokes(Display *dpy, int argc, char **argv, unsigned
+ 
+ 		if (strlen(key) > 1)
+ 		{
++			if (is_valid_keyword(key))
++				break;
++
+ 			switch(key[0])
+ 			{
+ 				case '+':
+@@ -1289,14 +1316,6 @@ static void special_map_buttons(Display *dpy, XDevice *dev, param_t* param, int
+ 	int nwords = 0;
+ 	char **words = NULL;
+ 
+-	struct keywords {
+-		const char *keyword;
+-		int (*func)(Display*, int, char **, unsigned long*, unsigned long *);
+-	} keywords[] = {
+-		{"key", special_map_keystrokes},
+-		{ NULL, NULL }
+-	};
+-
+ 	TRACE("Special %s map for device %ld.\n", param->name, dev->device_id);
+ 
+ 	if (slen >= strlen(param->name) || strncmp(param->name, "Button", slen))
+@@ -1336,13 +1355,22 @@ static void special_map_buttons(Display *dpy, XDevice *dev, param_t* param, int
+ 	words = strjoinsplit(argc, argv, &nwords);
+ 	for (i = 0; i < nwords; i++)
+ 	{
+-		int j;
+-		for (j = 0; keywords[j].keyword; j++)
++		int j = 0;
++		while (keywords[j].keyword && i < nwords)
++		{
++			int parsed = 0;
+ 			if (strcasecmp(words[i], keywords[j].keyword) == 0)
+-				i += keywords[j].func(dpy,
+-						      nwords - i - 1,
+-						      &words[i + 1],
+-						      &nitems, data);
++			{
++				parsed = keywords[j].func(dpy, nwords - i - 1,
++							  &words[i + 1],
++							  &nitems, data);
++				i += parsed;
++			}
++			if (parsed)
++				j = parsed = 0; /* restart with first keyword */
++			else
++				j++;
++		}
+ 	}
+ 
+ 	XChangeDeviceProperty(dpy, dev, prop, XA_INTEGER, 32,
+-- 
+1.7.1
+

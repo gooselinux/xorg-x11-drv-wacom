@@ -1,0 +1,107 @@
+From 9a132ddb4f0510b8bfbb51dc997f2a61c8e79863 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 25 Mar 2010 14:30:33 +1000
+Subject: [PATCH 01/11] xsetwacom: refacture button mapping code.
+
+This loses the ability do do "xsetwacom --set Button1 button 5" to make
+Button1 do what button 5 does. Really, just run the command twice...
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+---
+ tools/xsetwacom.c |   64 +++++++++++++++++++++-------------------------------
+ 1 files changed, 26 insertions(+), 38 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index a279648..a941a29 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1357,39 +1357,12 @@ static void special_map_buttons(Display *dpy, XDevice *dev, param_t* param, int
+ 	XFlush(dpy);
+ }
+ 
+-/*
+-   Supports three variations.
+-   xsetwacom set device Button1 1
+-	- maps button 1 to logical button 1
+-   xsetwacom set device Button1 "Button 5"
+-	- maps button 1 to the same logical button button 5 is mapped
+-   xsetwacom set device Button1 "key a b c d"
+-	- maps button 1 to key events a b c d
+- */
+-static void map_button(Display *dpy, XDevice *dev, param_t* param, int argc, char **argv)
++
++static void map_button_simple(Display *dpy, XDevice *dev, param_t* param, int button)
+ {
+ 	int nmap = 256;
+ 	unsigned char map[nmap];
+-	int i, btn_no = 0;
+-	int ref_button = -1; /* xsetwacom set <name> Button1 "Button 5" */
+-
+-	if (argc <= 0)
+-		return;
+-
+-	TRACE("Mapping %s for device %ld.\n", param->name, dev->device_id);
+-
+-	for(i = 0; i < strlen(argv[0]); i++)
+-	{
+-		if (!isdigit(argv[0][i]))
+-		{
+-			ref_button = get_button_number_from_string(argv[0]);
+-			if (ref_button != -1)
+-				break;
+-
+-			special_map_buttons(dpy, dev, param, argc, argv);
+-			return;
+-		}
+-	}
++	int btn_no = 0;
+ 
+ 	btn_no = get_button_number_from_string(param->name);
+ 	if (btn_no == -1)
+@@ -1400,19 +1373,34 @@ static void map_button(Display *dpy, XDevice *dev, param_t* param, int argc, cha
+ 	{
+ 		fprintf(stderr, "Button number does not exist on device.\n");
+ 		return;
+-	} else if (ref_button >= nmap)
+-	{
+-		fprintf(stderr, "Reference button number does not exist on device.\n");
+-		return;
+ 	}
+ 
+-	if (ref_button != -1)
+-		map[btn_no - 1] = map[ref_button - 1];
+-	else
+-		map[btn_no - 1] = atoi(argv[0]);
++	map[btn_no - 1] = button;
+ 	XSetDeviceButtonMapping(dpy, dev, map, nmap);
+ 	XFlush(dpy);
+ }
++/*
++   Supports three variations.
++   xsetwacom set device Button1 1
++	- maps button 1 to logical button 1
++   xsetwacom set device Button1 "key a b c d"
++	- maps button 1 to key events a b c d
++ */
++static void map_button(Display *dpy, XDevice *dev, param_t* param, int argc, char **argv)
++{
++	int button;
++
++	if (argc <= 0)
++		return;
++
++	TRACE("Mapping %s for device %ld.\n", param->name, dev->device_id);
++
++	/* --set "device" Button1 3 */
++	if (sscanf(argv[0], "%d", &button) == 1)
++		map_button_simple(dpy, dev, param, button);
++	else
++		special_map_buttons(dpy, dev, param, argc, argv);
++}
+ 
+ static void set_xydefault(Display *dpy, XDevice *dev, param_t* param, int argc, char **argv)
+ {
+-- 
+1.7.1
+

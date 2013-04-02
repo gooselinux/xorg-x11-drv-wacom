@@ -1,0 +1,56 @@
+From fbb84cf733dac15edb5bd6a55f89c8889af2e13b Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 28 Oct 2010 15:14:38 +1000
+Subject: [PATCH 15/16] xsetwacom: support "modetoggle" keyword.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+(cherry picked from commit 48bbc89e7cc4e263a04287fff68ac109a8727910)
+
+Conflicts:
+
+	tools/xsetwacom.c
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 891328f..39a5ab6 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1173,6 +1173,7 @@ out:
+ static int special_map_keystrokes(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
+ static int special_map_button(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
+ static int special_map_core(Display*, int argc, char **argv, unsigned long *ndata, unsigned long *data);
++static int special_map_modetoggle(Display*, int argc, char **argv, unsigned long *ndata, unsigned long *data);
+ 
+ /* Valid keywords for the --set ButtonX options */
+ struct keywords {
+@@ -1182,6 +1183,7 @@ struct keywords {
+ 	{"key", special_map_keystrokes},
+ 	{"button", special_map_button},
+ 	{"core", special_map_core},
++	{"modetoggle", special_map_modetoggle},
+ 	{ NULL, NULL }
+ };
+ 
+@@ -1199,6 +1201,15 @@ static int special_map_core(Display *dpy, int argc, char **argv, unsigned long *
+ 	return 0;
+ }
+ 
++static int special_map_modetoggle(Display* dpy, int argc, char **argv, unsigned long *ndata, unsigned long *data)
++{
++	data[*ndata] = AC_MODETOGGLE;
++
++	*ndata += 1;
++
++	return 0;
++}
++
+ static inline int is_valid_keyword(const char *keyword)
+ {
+ 	struct keywords *kw = keywords;
+-- 
+1.7.1
+

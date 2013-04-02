@@ -1,0 +1,29 @@
+From cc46aa9ddf33ae74c8d491f9e9f0de284b1b70fc Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 10 Jun 2010 09:56:31 +1000
+Subject: [PATCH 06/11] xsetwacom: support up/down/left/right as special keys.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Ping Cheng <pinglinux@gmail.com>
+(cherry picked from commit c5a2829459df2d95a60527f1e5af279150a28fd9)
+---
+ tools/xsetwacom.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index dfd6267..8671ef3 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1092,6 +1092,9 @@ static char *convert_specialkey(const char *modifier)
+ 
+ 		{"esc", "Escape"}, {"Esc", "Escape"},
+ 
++		{"up", "Up"}, {"down", "Down"},
++		{"left", "Left"}, {"right", "Right"},
++
+ 		{ NULL, NULL }
+ 	};
+ 
+-- 
+1.7.1
+

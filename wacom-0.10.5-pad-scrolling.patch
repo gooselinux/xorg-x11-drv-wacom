@@ -1,0 +1,60 @@
+From 2038ad187823b770fcb3b5e77dacf4bad27617e6 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 25 Mar 2010 10:49:02 +1000
+Subject: [PATCH] Always put the pad in relative mode.
+
+Fixes Intuos3 scrolling issues.
+
+The pad cannot be in absolute mode as it sends the axis values to the
+server. Since the pad never gets x/y coordinates from the tablet the server
+will fill in the defaults (0/0) for it - even if first_valuator is always >
+1. This results in the pointer being reset to the screen origin each time
+the pad's scroll strip is used.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+
+Upstream commit 5f4bc4d43bce84dd84192d3cc9fb7a9ad5b1031d squashed in.
+
+Don't allow the pad to be switched to absolute mode.
+
+See 2038ad187823b "Always put the pad in relative mode" for a more detailed
+explanation.
+
+---
+ src/wcmValidateDevice.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/wcmValidateDevice.c b/src/wcmValidateDevice.c
+index f153cd2..51b16de 100644
+--- a/src/wcmValidateDevice.c
++++ b/src/wcmValidateDevice.c
+@@ -333,9 +333,9 @@ int wcmParseOptions(LocalDevicePtr local)
+ 		 */
+ 	}
+ 
+-	/* Pad is always in absolute mode. */
++	/* Pad is always in relative mode. */
+ 	if (IsPad(priv))
+-		priv->flags |= ABSOLUTE_FLAG;
++		priv->flags &= ~ABSOLUTE_FLAG;
+ 
+ 	/* Store original local Core flag so it can be changed later */
+ 	if (local->flags & (XI86_ALWAYS_CORE | XI86_CORE_POINTER))
+--- a/src/wcmXCommand.c
++++ b/src/wcmXCommand.c
+@@ -36,9 +36,9 @@ int wcmDevSwitchModeCall(LocalDevicePtr local, int mode)
+ 
+ 	DBG(3, priv, "to mode=%d\n", mode);
+ 
+-	/* Pad is always in absolute mode.*/
++	/* Pad is always in relative mode.*/
+ 	if (IsPad(priv))
+-		return (mode == Absolute) ? Success : XI_BadMode;
++		return (mode == Relative) ? Success : XI_BadMode;
+ 
+ 	if ((mode == Absolute) && !is_absolute)
+ 	{
+-- 
+1.6.6.1
+

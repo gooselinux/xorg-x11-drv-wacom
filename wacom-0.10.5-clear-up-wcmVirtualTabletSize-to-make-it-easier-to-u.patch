@@ -1,0 +1,150 @@
+From e98ddbbebcc9e9fa7312a1e21e2188ece1b363f1 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 17 Jan 2011 10:19:04 +1000
+Subject: [PATCH 1/4] clear up wcmVirtualTabletSize() to make it easier to understand
+
+---
+ src/xf86Wacom.c     |   54 ++++++++++++++++++++++++++++++++++++++++----------
+ src/xf86WacomDefs.h |   30 +++++++++++++++-------------
+ 2 files changed, 59 insertions(+), 25 deletions(-)
+
+diff --git a/src/xf86Wacom.c b/src/xf86Wacom.c
+index efca491..dd66ec8 100644
+--- a/src/xf86Wacom.c
++++ b/src/xf86Wacom.c
+@@ -284,33 +284,65 @@ void wcmVirtualTabletPadding(LocalDevicePtr local)
+ void wcmVirtualTabletSize(LocalDevicePtr local)
+ {
+ 	WacomDevicePtr priv = (WacomDevicePtr)local->private;
+-	int i, tabletSize;
+ 
+ 	if (!(priv->flags & ABSOLUTE_FLAG))
+ 	{
+ 		priv->sizeX = priv->bottomX - priv->topX;
+ 		priv->sizeY = priv->bottomY - priv->topY;
++		DBG(10, priv, "relative device, using size of %d/%d\n", priv->sizeX, priv->sizeY);
++
+ 		return;
+ 	}
++	/* given a three monitor setup
++	 *	        offset
++	 *  __________ /__________  __________
++	 * |          ||          ||          |
++	 * |          ||          ||          |
++	 * |    A     ||    B     ||    C     |
++	 * |__________||__________||__________|
++	 *
++	 * this function calculates the virtual size of the tablet by
++	 * mapping the actual size into an axis range that is all three
++	 * monitors in device coordinates taken together.
++	 * in the simplest case, with 3 identical monitors, sizeX would be
++	 * (3 * actual size).
++	 *
++	 * coments describe for example of screen_no = 1 (Screen B)
++	 */
+ 
++	/* This is the actual tablet size in device coords */
+ 	priv->sizeX = priv->bottomX - priv->topX - priv->tvoffsetX;
+ 	priv->sizeY = priv->bottomY - priv->topY - priv->tvoffsetY;
+ 
+ 	if ((priv->screen_no != -1) || (priv->twinview != TV_NONE) || (!priv->wcmMMonitor))
+ 	{
+-		i = priv->currentScreen;
+-
++		double width, height; /* screen width, height */
++		double offset; /* screen x or y offset from origin */
++		double remainder; /* screen remainer on right-most screens */
++		double tabletSize;
++		int screen = priv->currentScreen;
++
++		width = priv->screenBottomX[screen] - priv->screenTopX[screen];
++		offset = priv->screenTopX[screen];
+ 		tabletSize = priv->sizeX;
+-		priv->sizeX += (int)(((double)priv->screenTopX[i] * tabletSize)
+-			/ ((double)(priv->screenBottomX[i] - priv->screenTopX[i])) + 0.5);
+-		priv->sizeX += (int)((double)((priv->maxWidth - priv->screenBottomX[i])
+-			* tabletSize) / ((double)(priv->screenBottomX[i] - priv->screenTopX[i])) + 0.5);
++		/* width left over right of the screen */
++		remainder = priv->maxWidth - priv->screenBottomX[screen];
++
++		/* add screen A size in device coordinates */
++		priv->sizeX += (int)((offset * tabletSize) / width + 0.5);
++
++		/* add screen C size in device coordinates */
++		priv->sizeX += (int)((remainder * tabletSize) / width + 0.5);
+ 
+ 		tabletSize = priv->sizeY;
+-		priv->sizeY += (int)((double)(priv->screenTopY[i] * tabletSize)
+-			/ ((double)(priv->screenBottomY[i] - priv->screenTopY[i])) + 0.5);
+-		priv->sizeY += (int)((double)((priv->maxHeight - priv->screenBottomY[i])
+-			* tabletSize) / ((double)(priv->screenBottomY[i] - priv->screenTopY[i])) + 0.5);
++
++		offset = priv->screenTopY[screen];
++		height = priv->screenBottomY[screen] - priv->screenTopY[screen];
++		/* height left over bottom of the screen */
++		remainder = priv->maxHeight - priv->screenBottomY[screen];
++
++		priv->sizeY += (int)(offset * tabletSize / height + 0.5);
++		priv->sizeY += (int)((remainder * tabletSize) / height + 0.5);
+ 	}
+ 	DBG(10, priv, "x=%d y=%d \n", priv->sizeX, priv->sizeY);
+ 	return;
+diff --git a/src/xf86WacomDefs.h b/src/xf86WacomDefs.h
+index 539a1e9..baddf1d 100644
+--- a/src/xf86WacomDefs.h
++++ b/src/xf86WacomDefs.h
+@@ -151,26 +151,28 @@ struct _WacomDeviceRec
+ 	int debugLevel;
+ 
+ 	unsigned int flags;	/* various flags (type, abs, touch...) */
+-	int topX;		/* X top */
+-	int topY;		/* Y top */
+-	int bottomX;		/* X bottom */
+-	int bottomY;		/* Y bottom */
++	int topX;		/* X top in device coords*/
++	int topY;		/* Y top in device coords*/
++	int bottomX;		/* X bottom in device coords*/
++	int bottomY;		/* Y bottom in device coords*/
+ 	int resolX;             /* X resolution */
+ 	int resolY;             /* Y resolution */
+ 	int maxX;	        /* tool logical maxX */
+ 	int maxY;	        /* tool logical maxY */
+-	int sizeX;		/* active X size */
+-	int sizeY;		/* active Y size */
++	int sizeX;		/* active X size in device coords */
++	int sizeY;		/* active Y size in device coords */
+ 	double factorX;		/* X factor */
+ 	double factorY;		/* Y factor */
+ 	unsigned int serial;	/* device serial number */
+ 	int screen_no;		/* associated screen */
+-	int screenTopX[32];	/* left cordinate of the associated screen */
+-	int screenTopY[32];	/* top cordinate of the associated screen */
+-	int screenBottomX[32];	/* right cordinate of the associated screen */
+-	int screenBottomY[32];	/* bottom cordinate of the associated screen */
+-	int maxWidth;		/* max active screen width */
+-	int maxHeight;		/* max active screen height */
++        /* The next 4 are set from the TVResolution coordinates if TwinView
++         * is active */
++	int screenTopX[32];	/* left cordinate of the associated screen in screen coords */
++	int screenTopY[32];	/* top cordinate of the associated screen in screen coords */
++	int screenBottomX[32];	/* right cordinate of the associated screen in screen coords */
++	int screenBottomY[32];	/* bottom cordinate of the associated screen in screen coords */
++	int maxWidth;		/* max active screen width in screen coords */
++	int maxHeight;		/* max active screen height in screen coords */
+ 	int leftPadding;	/* left padding for virtual tablet */
+ 	int topPadding;		/* top padding for virtual tablet */
+ 	int button[WCM_MAX_BUTTONS];/* buttons assignments */
+@@ -221,8 +223,8 @@ struct _WacomDeviceRec
+ 	int numScreen;          /* number of configured screens */
+ 	int currentScreen;      /* current screen in display */
+ 	int twinview;	        /* using twinview mode of gfx card */
+-	int tvoffsetX;		/* X edge offset for TwinView setup */
+-	int tvoffsetY;		/* Y edge offset for TwinView setup */
++	int tvoffsetX;		/* X edge offset for TwinView setup in device coords  */
++	int tvoffsetY;		/* Y edge offset for TwinView setup in device coords */
+ 	int tvResolution[4];	/* twinview screens' resultion */
+ 	int wcmMMonitor;        /* disable/enable moving across screens in multi-monitor desktop */
+ 	int wcmDevOpenCount;    /* Device open count */
+-- 
+1.7.3.4
+

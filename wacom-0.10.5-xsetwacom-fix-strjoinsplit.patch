@@ -1,0 +1,32 @@
+From fabaa32309e66477e683e9c849c2f7d3ed30cf3b Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Fri, 26 Mar 2010 11:18:59 +1000
+Subject: [PATCH 08/11] xsetwacom: fix strjoinsplit.
+
+silly.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+(cherry picked from commit 967f90c75a7ad17c8e26bb89f5b348c43bbd146e)
+---
+ tools/xsetwacom.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 08e260a..9858a95 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1325,8 +1325,9 @@ static char** strjoinsplit(int argc, char **argv, int *nwords)
+ 		if (strlen(buff) + strlen(*argv) + 1 >= sizeof(buff))
+ 			break;
+ 
+-		strcat(buff, (const char*)(*argv)++);
++		strcat(buff, *argv);
+ 		strcat(buff, " ");
++		argv++;
+ 	}
+ 
+ 	*nwords = 0;
+-- 
+1.7.1
+

@@ -1,0 +1,53 @@
+From 07b364ecfef128ffc7e02a2a075ea8ad059e4d96 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 17 Jan 2011 10:57:14 +1000
+Subject: [PATCH 2/4] Add some more comments to help explain things.
+
+---
+ src/wcmCommon.c |    6 ++++--
+ src/xf86Wacom.c |    5 +++++
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/wcmCommon.c b/src/wcmCommon.c
+index 35c0156..48a042d 100644
+--- a/src/wcmCommon.c
++++ b/src/wcmCommon.c
+@@ -1620,7 +1620,8 @@ static void wcmInitialTVScreens(LocalDevicePtr local)
+ 			priv->tvoffsetY = 0;
+ 		}
+ 
+-		/* default resolution */
++		/* default resolution. this should never be hit since we
++		 * always set the tvresolution from wacomcpl */
+ 		if(!priv->tvResolution[0])
+ 		{
+ 			priv->tvResolution[0] = screenInfo.screens[0]->width/2;
+@@ -1638,7 +1639,8 @@ static void wcmInitialTVScreens(LocalDevicePtr local)
+ 			priv->tvoffsetY = 60;
+ 		}
+ 
+-		/* default resolution */
++		/* default resolution. this should never be hit since we
++		 * always set the tvresolution from wacomcpl */
+ 		if(!priv->tvResolution[0])
+ 		{
+ 			priv->tvResolution[0] = screenInfo.screens[0]->width;
+diff --git a/src/xf86Wacom.c b/src/xf86Wacom.c
+index dd66ec8..bcbb2e1 100644
+--- a/src/xf86Wacom.c
++++ b/src/xf86Wacom.c
+@@ -361,6 +361,11 @@ void wcmInitialCoordinates(LocalDevicePtr local, int axis)
+ 
+ 	wcmMappingFactor(local);
+ 
++	/* wcmMappingFactor calls wcmVirtualTabletSize. so once we're here,
++	 * sizeX contains the total width in device coordinates accounting
++	 * for multiple screens (not the _actual width of the tablet, see
++	 * wcmVirtualTabletSize)
++	 */
+ 	if (priv->flags & ABSOLUTE_FLAG)
+ 	{
+ 		topx = priv->topX;
+-- 
+1.7.3.4
+

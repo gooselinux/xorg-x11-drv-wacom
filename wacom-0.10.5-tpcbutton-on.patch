@@ -1,0 +1,34 @@
+From d83ad3afe27feb1d055cfeeef448d5045089c6f0 Mon Sep 17 00:00:00 2001
+From: Ping Cheng <pingc@wacom.com>
+Date: Mon, 29 Mar 2010 10:00:05 -0700
+Subject: [PATCH] TPCButton is on by default for ISDV4 devices
+
+The recent updates for ISDV4.c missed this bit.
+
+Signed-off-by: Ping Cheng <pingc@wacom.com>
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ src/wcmISDV4.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/src/wcmISDV4.c b/src/wcmISDV4.c
+index c0c3f83..e6a24d0 100644
+--- a/src/wcmISDV4.c
++++ b/src/wcmISDV4.c
+@@ -172,6 +172,13 @@ static Bool isdv4Init(LocalDevicePtr local, char* id, float *version)
+ 	/*set the model */
+ 	common->wcmModel = &isdv4General;
+ 
++	/* Tablet PC Button is on by default */
++	common->wcmTPCButtonDefault = 1;
++
++	/* check if TPCButton was turned off by user for stylus */
++	if (priv->flags & STYLUS_ID)
++		common->wcmTPCButton = xf86SetBoolOption(local->options,
++			"TPCButton", common->wcmTPCButtonDefault);
+ 	return Success;
+ }
+ 
+-- 
+1.6.5.2
+

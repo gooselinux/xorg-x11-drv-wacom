@@ -1,0 +1,94 @@
+From ad2bf83473fbb431c5ba1f70b2e0958eb652c82c Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 27 Oct 2010 09:25:29 +1000
+Subject: [PATCH 03/11] xsetwacom: handle special button mappings.
+
+As with keystrokes, this handles usecases like
+"button +5 4 -5" for a button 5 down, button 4 click, button 5 up.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+
+Conflicts:
+
+	tools/xsetwacom.c
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   46 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 46 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 0fa4972..f920971 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1161,6 +1161,7 @@ out:
+ 	return kc;
+ }
+ static int special_map_keystrokes(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
++static int special_map_button(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
+ 
+ /* Valid keywords for the --set ButtonX options */
+ struct keywords {
+@@ -1168,6 +1169,7 @@ struct keywords {
+ 	int (*func)(Display*, int, char **, unsigned long*, unsigned long *);
+ } keywords[] = {
+ 	{"key", special_map_keystrokes},
++	{"button", special_map_button},
+ 	{ NULL, NULL }
+ };
+ 
+@@ -1184,6 +1186,50 @@ static inline int is_valid_keyword(const char *keyword)
+ 	return 0;
+ }
+ 
++static int special_map_button(Display* dpy, int argc, char **argv, unsigned long *ndata, unsigned long *data)
++{
++	int nitems = 0;
++	int i;
++
++	for (i = 0; i < argc; i++)
++	{
++		char *btn = argv[i];
++		int button;
++		int need_press = 0, need_release = 0;
++
++		if (strlen(btn) > 1)
++		{
++			if (is_valid_keyword(btn))
++				break;
++
++			if (sscanf(btn, "%d", &button) != 1)
++				return nitems;
++
++			switch (btn[0])
++			{
++				case '+': need_press = 1; break;
++				case '-': need_release= 1; break;
++				default:
++					  need_press = need_release = 1;
++					  break;
++			}
++		} else
++			need_press = need_release = 1;
++
++		TRACE("Button map %d [%s,%s]\n", abs(button),
++				need_press ?  "press" : "",
++				need_release ?  "release" : "");
++
++		if (need_press)
++			data[*ndata + nitems++] = AC_BUTTON | AC_KEYBTNPRESS | abs(button);
++		if (need_release)
++			data[*ndata + nitems++] = AC_BUTTON | abs(button);
++	}
++
++	*ndata += nitems;
++	return nitems;
++}
++
+ /*
+    Map gibberish like "ctrl alt f2" into the matching AC_KEY values.
+    Returns 1 on success or 0 otherwise.
+-- 
+1.7.1
+

@@ -1,0 +1,64 @@
+From a38dc85f71f7eeefe9b207dd10632a6d56d2a735 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 27 Oct 2010 15:05:09 +1000
+Subject: [PATCH 11/11] xsetwacom: unset special button mappings when switching to simple ones.
+
+After a special button mapping was assigned, allow switching back to a
+simple button mapping.
+The following sequence now works:
+    xsetwacom set <device> Button1 key a b c
+    xsetwacom set <device> Button1 1
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+(cherry picked from commit 3055c4cf8b1140bfb6e0a7c89da0eec4f306416d)
+
+Conflicts:
+
+	tools/xsetwacom.c
+---
+ tools/xsetwacom.c |   15 ++++++++++-----
+ 1 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 098ecbe..7515e28 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1390,8 +1390,9 @@ static void special_map_buttons(Display *dpy, XDevice *dev, param_t* param, int
+ 	if (btn_no > btnact_nitems)
+ 		return;
+ 
+-	/* some atom already assigned, modify that */
+-	if (btnact_data[btn_no])
++	if (argc == 0) /* unset property */
++		btnact_data[btn_no] = 0;
++	else if (btnact_data[btn_no]) /* some atom already assigned, modify that */
+ 		prop = btnact_data[btn_no];
+ 	else
+ 	{
+@@ -1428,9 +1429,10 @@ static void special_map_buttons(Display *dpy, XDevice *dev, param_t* param, int
+ 		}
+ 	}
+ 
+-	XChangeDeviceProperty(dpy, dev, prop, XA_INTEGER, 32,
+-				PropModeReplace,
+-				(unsigned char*)data, nitems);
++	if (argc > 0) /* unset property */
++		XChangeDeviceProperty(dpy, dev, prop, XA_INTEGER, 32,
++					PropModeReplace,
++					(unsigned char*)data, nitems);
+ 
+ 	if (need_update)
+ 		XChangeDeviceProperty(dpy, dev, btnact_prop, XA_ATOM, 32,
+@@ -1461,6 +1463,9 @@ static void map_button_simple(Display *dpy, XDevice *dev, param_t* param, int bu
+ 	map[btn_no - 1] = button;
+ 	XSetDeviceButtonMapping(dpy, dev, map, nmap);
+ 	XFlush(dpy);
++
++	/* If there's a property set, unset it */
++	special_map_buttons(dpy, dev, param, 0, NULL);
+ }
+ /*
+    Supports three variations.
+-- 
+1.7.1
+

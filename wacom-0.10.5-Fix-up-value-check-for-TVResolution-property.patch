@@ -1,0 +1,48 @@
+From 9ef84837dd1aa557a62a13a0e7940f2710d33827 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Wed, 25 Aug 2010 14:54:23 +1000
+Subject: [PATCH 3/9] Fix up value check for TVResolution property.
+
+The properties cannot match up in height _and_ width, only one of the two.
+Which one depends on the TwinView settings.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ src/wcmXCommand.c |   19 ++++++++++++++++---
+ 1 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/src/wcmXCommand.c b/src/wcmXCommand.c
+index d820abc..4c81b9c 100644
+--- a/src/wcmXCommand.c
++++ b/src/wcmXCommand.c
+@@ -550,11 +550,24 @@ int wcmSetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
+ 
+ 		/* non-TwinView settings can not set TwinView RESOLUTION */
+ 		if ((priv->twinview == TV_NONE) || (values[0] < 0) ||
+-				(values[1] < 0) || (values[2] < 0) || (values[3] < 0) ||
+-				((values[0] + values[2]) != screenInfo.screens[0]->width) ||
+-				((values[1] + values[3]) != screenInfo.screens[0]->height))
++				(values[1] < 0) || (values[2] < 0) || (values[3] < 0))
+ 			return BadValue;
+ 
++		switch(priv->twinview)
++		{
++			case TV_NONE: break;
++			case TV_ABOVE_BELOW:
++			case TV_BELOW_ABOVE:
++				      if ((values[1] + values[3]) != screenInfo.screens[0]->height)
++					      return BadValue;
++				      break;
++			case TV_LEFT_RIGHT:
++			case TV_RIGHT_LEFT:
++				      if ((values[0] + values[2]) != screenInfo.screens[0]->width)
++					      return BadValue;
++				      break;
++		}
++
+ 		if (!checkonly)
+ 		{
+ 			priv->tvResolution[0] = values[0];
+-- 
+1.7.2.2
+

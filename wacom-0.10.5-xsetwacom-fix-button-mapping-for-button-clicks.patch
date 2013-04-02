@@ -1,0 +1,43 @@
+From 94f093320b0dee07544462f40a6feb027cb99ec9 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 5 Jul 2010 14:27:36 +1000
+Subject: [PATCH 04/11] xsetwacom: fix button mapping for button clicks.
+
+Misplaced scanf caused button mappings to always be 0 if no + or - was
+specified or the button number was < 10.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+(cherry picked from commit 6d5a4bea3319901ab872550ddfd703d601b873e9)
+---
+ tools/xsetwacom.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index f920971..2b2f7d7 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1202,9 +1202,6 @@ static int special_map_button(Display* dpy, int argc, char **argv, unsigned long
+ 			if (is_valid_keyword(btn))
+ 				break;
+ 
+-			if (sscanf(btn, "%d", &button) != 1)
+-				return nitems;
+-
+ 			switch (btn[0])
+ 			{
+ 				case '+': need_press = 1; break;
+@@ -1216,6 +1213,10 @@ static int special_map_button(Display* dpy, int argc, char **argv, unsigned long
+ 		} else
+ 			need_press = need_release = 1;
+ 
++		if (sscanf(btn, "%d", &button) != 1)
++			return nitems;
++
++
+ 		TRACE("Button map %d [%s,%s]\n", abs(button),
+ 				need_press ?  "press" : "",
+ 				need_release ?  "release" : "");
+-- 
+1.7.1
+

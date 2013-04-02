@@ -1,0 +1,57 @@
+From 8d033daf68fd6f605b457f0ca5eb64a61f913937 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 28 Oct 2010 15:17:57 +1000
+Subject: [PATCH 16/16] xsetwacom: support "displaytoggle" as special button event.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Ping Cheng <pinglinux@gmail.com>
+(cherry picked from commit f1d3c1b1486c99ef64d0a34f354d7f89c3d181c8)
+
+Conflicts:
+
+	tools/xsetwacom.c
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 39a5ab6..28d9e7a 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1174,6 +1174,7 @@ static int special_map_keystrokes(Display*, int argc, char **argv, unsigned long
+ static int special_map_button(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
+ static int special_map_core(Display*, int argc, char **argv, unsigned long *ndata, unsigned long *data);
+ static int special_map_modetoggle(Display*, int argc, char **argv, unsigned long *ndata, unsigned long *data);
++static int special_map_displaytoggle(Display*, int argc, char **argv, unsigned long *ndata, unsigned long *data);
+ 
+ /* Valid keywords for the --set ButtonX options */
+ struct keywords {
+@@ -1184,6 +1185,7 @@ struct keywords {
+ 	{"button", special_map_button},
+ 	{"core", special_map_core},
+ 	{"modetoggle", special_map_modetoggle},
++	{"displaytoggle", special_map_displaytoggle},
+ 	{ NULL, NULL }
+ };
+ 
+@@ -1210,6 +1212,15 @@ static int special_map_modetoggle(Display* dpy, int argc, char **argv, unsigned
+ 	return 0;
+ }
+ 
++static int special_map_displaytoggle(Display* dpy, int argc, char **argv, unsigned long *ndata, unsigned long *data)
++{
++	data[*ndata] = AC_DISPLAYTOGGLE;
++
++	*ndata += 1;
++
++	return 0;
++}
++
+ static inline int is_valid_keyword(const char *keyword)
+ {
+ 	struct keywords *kw = keywords;
+-- 
+1.7.1
+

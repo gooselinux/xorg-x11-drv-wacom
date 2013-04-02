@@ -1,0 +1,72 @@
+From 1ca51e26625559a591b184027671d7bc96c45633 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Fri, 27 Aug 2010 10:45:59 +1000
+Subject: [PATCH 6/9] xsetwacom: set the TVResolution property to some sane values.
+
+When TwinView is changed, init the TVResolution property to some sane
+values. The user can always change them afterwards.
+---
+ tools/xsetwacom.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index 7631420..460d87c 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1550,6 +1550,7 @@ static void set_twinview(Display *dpy, XDevice *dev, param_t* param, int argc, c
+ 	int format;
+ 	unsigned char* data;
+ 	unsigned long nitems, bytes_after;
++	unsigned long *tvdata;
+ 
+ 	if (argc != 1)
+ 		goto error;
+@@ -1594,6 +1595,45 @@ static void set_twinview(Display *dpy, XDevice *dev, param_t* param, int argc, c
+ 	data[param->prop_offset] = twinview;
+ 	XChangeDeviceProperty(dpy, dev, prop, type, format,
+ 				PropModeReplace, data, nitems);
++
++	/* set the TVResolution to some sane defaults */
++	prop = XInternAtom(dpy, WACOM_PROP_TWINVIEW_RES, True);
++	XGetDeviceProperty(dpy, dev, prop, 0, 1000, False, AnyPropertyType,
++				&type, &format, &nitems, &bytes_after, &data);
++	if (nitems != 4 || format != 32)
++	{
++		fprintf(stderr, "Property for '%s' has no or wrong value - this is a bug.\n",
++			WACOM_PROP_TWINVIEW_RES);
++		return;
++	}
++
++	tvdata = (unsigned long*)data;
++	switch(twinview) {
++		case TV_NONE:
++			tvdata[0] = 0;
++			tvdata[1] = 0;
++			tvdata[2] = 0;
++			tvdata[3] = 0;
++			break;
++		case TV_LEFT_RIGHT:
++		case TV_RIGHT_LEFT:
++			tvdata[0] = DisplayWidth(dpy, 0)/2;
++			tvdata[1] = DisplayHeight(dpy, 0);
++			tvdata[2] = tvdata[0];
++			tvdata[3] = tvdata[1];
++			break;
++		case TV_ABOVE_BELOW:
++		case TV_BELOW_ABOVE:
++			tvdata[0] = DisplayWidth(dpy, 0);
++			tvdata[1] = DisplayHeight(dpy, 0)/2;
++			tvdata[2] = tvdata[0];
++			tvdata[3] = tvdata[1];
++			break;
++	}
++
++	XChangeDeviceProperty(dpy, dev, prop, type, format,
++				PropModeReplace, data, nitems);
++
+ 	XFlush(dpy);
+ 
+ 	return;
+-- 
+1.7.2.2
+

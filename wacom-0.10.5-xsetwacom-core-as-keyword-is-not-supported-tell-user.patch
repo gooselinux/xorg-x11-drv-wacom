@@ -1,0 +1,63 @@
+From 06b2b8d513fe2f92a837b06cbe1b98b0b4bfefae Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 28 Oct 2010 15:14:06 +1000
+Subject: [PATCH 14/16] xsetwacom: "core" as keyword is not supported, tell users so.
+
+The driver has no say whether a key is to be sent as core event or not, the
+attachment of the device will decide this (since X server 1.7).
+To let users know that their old configurations may not do the same thing,
+print a notice.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Acked-by: Ping Cheng <pinglinux@gmail.com>
+(cherry picked from commit 20715a4a066435b1d785a5b5df50b96c7bc5dcb5)
+
+Conflicts:
+
+	tools/xsetwacom.c
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+---
+ tools/xsetwacom.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/tools/xsetwacom.c b/tools/xsetwacom.c
+index cf50dc0..891328f 100644
+--- a/tools/xsetwacom.c
++++ b/tools/xsetwacom.c
+@@ -1172,6 +1172,7 @@ out:
+ }
+ static int special_map_keystrokes(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
+ static int special_map_button(Display*, int argc, char **argv, unsigned long *ndata, unsigned long* data);
++static int special_map_core(Display*, int argc, char **argv, unsigned long *ndata, unsigned long *data);
+ 
+ /* Valid keywords for the --set ButtonX options */
+ struct keywords {
+@@ -1180,9 +1181,24 @@ struct keywords {
+ } keywords[] = {
+ 	{"key", special_map_keystrokes},
+ 	{"button", special_map_button},
++	{"core", special_map_core},
+ 	{ NULL, NULL }
+ };
+ 
++/* the "core" keyword isn't supported anymore, we just have this here to
++   tell people that. */
++static int special_map_core(Display *dpy, int argc, char **argv, unsigned long *ndata, unsigned long *data)
++{
++	static int once_only = 1;
++	if (once_only)
++	{
++		printf ("Note: The \"core\" keyword is not supported anymore and "
++			"will be ignored.\n");
++		once_only = 0;
++	}
++	return 0;
++}
++
+ static inline int is_valid_keyword(const char *keyword)
+ {
+ 	struct keywords *kw = keywords;
+-- 
+1.7.1
+
